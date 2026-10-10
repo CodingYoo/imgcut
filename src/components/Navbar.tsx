@@ -1,5 +1,6 @@
 import React from 'react';
-import { Sparkles, ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
+import { BrandLogo } from './BrandLogo';
 
 interface NavbarProps {
   activeTab: 'process' | 'creations';
@@ -18,25 +19,15 @@ export const Navbar: React.FC<NavbarProps> = ({
     <header className="border-b border-slate-200/80 bg-white sticky top-0 z-40 px-4 sm:px-8 py-3">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Left: Brand + Nav Tabs */}
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-4 sm:gap-8">
           {/* Brand */}
-          <div
-            onClick={onGoHome}
-            className="flex items-center gap-2.5 cursor-pointer group select-none"
-          >
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/20 group-hover:bg-blue-700 transition-colors">
-              <Sparkles className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-lg font-bold tracking-tight text-slate-900">
-              PicScale
-            </span>
-          </div>
+          <BrandLogo size="md" showBadge={true} onClick={onGoHome} />
 
           {/* Navigation Links */}
-          <nav className="flex items-center gap-6">
+          <nav className="flex items-center gap-3 sm:gap-6">
             <button
               onClick={() => onTabChange('process')}
-              className={`relative py-1 text-sm font-semibold transition-colors ${
+              className={`relative py-1 text-xs sm:text-sm font-semibold transition-colors ${
                 activeTab === 'process'
                   ? 'text-blue-600'
                   : 'text-slate-600 hover:text-slate-900'
@@ -50,7 +41,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             <button
               onClick={() => onTabChange('creations')}
-              className={`relative py-1 text-sm font-semibold transition-colors flex items-center gap-1.5 ${
+              className={`relative py-1 text-xs sm:text-sm font-semibold transition-colors flex items-center gap-1.5 ${
                 activeTab === 'creations'
                   ? 'text-blue-600'
                   : 'text-slate-600 hover:text-slate-900'
@@ -70,10 +61,10 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Right: Security Pill */}
-        <div className="flex items-center gap-1.5 text-xs text-slate-500">
-          <ShieldCheck className="w-4 h-4 text-slate-400" />
-          <span className="hidden sm:inline">完全在浏览器中处理 · 无需安装 · 隐私安全</span>
-          <span className="sm:hidden">纯本地处理 · 隐私安全</span>
+        <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-500 shrink-0">
+          <ShieldCheck className="w-4 h-4 text-emerald-500" />
+          <span className="hidden md:inline">完全在浏览器中处理 · 无需安装 · 隐私安全</span>
+          <span className="md:hidden">纯本地 · 隐私安全</span>
         </div>
       </div>
     </header>

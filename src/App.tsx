@@ -63,11 +63,15 @@ export const App: React.FC = () => {
     filenameSuffix: '_resized',
   });
 
+  const [editorTool, setEditorTool] = useState<ActiveTool>('crop');
   const selectedImage = images.find((i) => i.id === selectedId) || images[0] || null;
 
   // Add files to state
   const handleAddFiles = useCallback(
     async (files: File[], _initialTool?: ActiveTool) => {
+      if (_initialTool) {
+        setEditorTool(_initialTool);
+      }
       const newItems: ImageItem[] = [];
 
       for (const file of files) {
@@ -262,6 +266,7 @@ export const App: React.FC = () => {
           onDownload={handleDownloadSingle}
           onBatchView={() => setViewMode('batch')}
           isProcessing={isProcessing}
+          initialTool={editorTool}
         />
       ) : (
         /* 2. Standard View with Top Navbar */

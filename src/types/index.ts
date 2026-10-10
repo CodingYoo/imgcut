@@ -1,6 +1,5 @@
 export type ActiveTool =
   | 'crop'
-  | 'resize'
   | 'rotate'
   | 'convert'
   | 'compress'

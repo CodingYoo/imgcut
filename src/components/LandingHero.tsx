@@ -6,15 +6,55 @@ import {
   Sparkles,
   ShieldCheck,
   Crop,
-  Maximize2,
   HardDrive,
   RefreshCw,
+  Sliders,
+  Palette,
+  Droplet,
   MoreHorizontal,
   ArrowRight,
   Link as LinkIcon,
 } from 'lucide-react';
 import { createSampleImage } from '../utils/sampleImages';
 import type { ActiveTool } from '../types';
+
+const SAMPLE_PHOTOS = [
+  {
+    id: 'mountain' as const,
+    label: '雪山',
+    thumb: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=160&auto=format&fit=crop&q=80',
+    fullUrl: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1600&auto=format&fit=crop&q=85',
+    filename: 'sample_lake_mountain.jpg',
+  },
+  {
+    id: 'sunset' as const,
+    label: '日落',
+    thumb: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=160&auto=format&fit=crop&q=80',
+    fullUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1600&auto=format&fit=crop&q=85',
+    filename: 'sample_golden_sunset.jpg',
+  },
+  {
+    id: 'cat' as const,
+    label: '猫咪',
+    thumb: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=160&auto=format&fit=crop&q=80',
+    fullUrl: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=1600&auto=format&fit=crop&q=85',
+    filename: 'sample_cute_cat.jpg',
+  },
+  {
+    id: 'leaf' as const,
+    label: '绿叶',
+    thumb: 'https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=160&auto=format&fit=crop&q=80',
+    fullUrl: 'https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=1600&auto=format&fit=crop&q=85',
+    filename: 'sample_green_monstera.jpg',
+  },
+  {
+    id: 'city' as const,
+    label: '建筑',
+    thumb: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=160&auto=format&fit=crop&q=80',
+    fullUrl: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1600&auto=format&fit=crop&q=85',
+    filename: 'sample_modern_architecture.jpg',
+  },
+];
 
 interface LandingHeroProps {
   onFilesSelected: (files: File[], initialTool?: ActiveTool) => void;
@@ -85,9 +125,20 @@ export const LandingHero: React.FC<LandingHeroProps> = ({ onFilesSelected }) => 
     }
   };
 
-  const handleSelectSample = (type: 'mountain' | 'sunset' | 'cat' | 'leaf' | 'city') => {
-    const file = createSampleImage(type);
-    onFilesSelected([file], pendingTool);
+  const handleSelectSample = async (sample: typeof SAMPLE_PHOTOS[number]) => {
+    try {
+      const res = await fetch(sample.fullUrl);
+      if (res.ok) {
+        const blob = await res.blob();
+        const file = new File([blob], sample.filename, { type: blob.type || 'image/jpeg' });
+        onFilesSelected([file], pendingTool);
+        return;
+      }
+    } catch {
+      // Fallback to high-res canvas generated image if network fetch is blocked
+    }
+    const fallbackFile = createSampleImage(sample.id);
+    onFilesSelected([fallbackFile], pendingTool);
   };
 
   const handleLoadFromUrl = async () => {
@@ -138,44 +189,52 @@ export const LandingHero: React.FC<LandingHeroProps> = ({ onFilesSelected }) => 
             </p>
           </div>
 
-          {/* 2x2 Feature Cards */}
-          <div className="grid grid-cols-2 gap-3.5 pt-2">
-            <div className="p-3.5 rounded-xl bg-white border border-slate-200/90 shadow-xs flex flex-col gap-1">
-              <div className="flex items-center gap-2 text-slate-800 font-bold text-xs">
-                <FileImage className="w-4 h-4 text-blue-600" />
-                <span>多种格式支持</span>
+          {/* 2x2 Feature Cards with enhanced high-contrast visual tokens */}
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5 pt-2">
+            <div className="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:shadow-xs transition-shadow flex flex-col gap-1 sm:gap-1.5">
+              <div className="flex items-center gap-1.5 sm:gap-2 text-slate-800 font-bold text-xs">
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100/60 shadow-2xs">
+                  <FileImage className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                </div>
+                <span className="truncate">多种格式支持</span>
               </div>
-              <p className="text-[11px] text-slate-400 m-0">
+              <p className="text-[10px] sm:text-[11px] text-slate-400 m-0 pl-0 sm:pl-9 truncate">
                 JPG / PNG / WebP / GIF / BMP
               </p>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-white border border-slate-200/90 shadow-xs flex flex-col gap-1">
-              <div className="flex items-center gap-2 text-slate-800 font-bold text-xs">
-                <Layers className="w-4 h-4 text-blue-600" />
-                <span>批量处理</span>
+            <div className="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:shadow-xs transition-shadow flex flex-col gap-1 sm:gap-1.5">
+              <div className="flex items-center gap-1.5 sm:gap-2 text-slate-800 font-bold text-xs">
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-100/60 shadow-2xs">
+                  <Layers className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                </div>
+                <span className="truncate">批量处理</span>
               </div>
-              <p className="text-[11px] text-slate-400 m-0">
+              <p className="text-[10px] sm:text-[11px] text-slate-400 m-0 pl-0 sm:pl-9 truncate">
                 一次处理多张图片
               </p>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-white border border-slate-200/90 shadow-xs flex flex-col gap-1">
-              <div className="flex items-center gap-2 text-slate-800 font-bold text-xs">
-                <Sparkles className="w-4 h-4 text-blue-600" />
-                <span>高质量输出</span>
+            <div className="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:shadow-xs transition-shadow flex flex-col gap-1 sm:gap-1.5">
+              <div className="flex items-center gap-1.5 sm:gap-2 text-slate-800 font-bold text-xs">
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center shrink-0 border border-violet-100/60 shadow-2xs">
+                  <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                </div>
+                <span className="truncate">高质量输出</span>
               </div>
-              <p className="text-[11px] text-slate-400 m-0">
+              <p className="text-[10px] sm:text-[11px] text-slate-400 m-0 pl-0 sm:pl-9 truncate">
                 高清无损，画质清晰
               </p>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-white border border-slate-200/90 shadow-xs flex flex-col gap-1">
-              <div className="flex items-center gap-2 text-slate-800 font-bold text-xs">
-                <ShieldCheck className="w-4 h-4 text-blue-600" />
-                <span>本地处理</span>
+            <div className="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:shadow-xs transition-shadow flex flex-col gap-1 sm:gap-1.5">
+              <div className="flex items-center gap-1.5 sm:gap-2 text-slate-800 font-bold text-xs">
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100/60 shadow-2xs">
+                  <ShieldCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                </div>
+                <span className="truncate">本地处理</span>
               </div>
-              <p className="text-[11px] text-slate-400 m-0">
+              <p className="text-[10px] sm:text-[11px] text-slate-400 m-0 pl-0 sm:pl-9 truncate">
                 数据不上传，隐私安全
               </p>
             </div>
@@ -188,15 +247,17 @@ export const LandingHero: React.FC<LandingHeroProps> = ({ onFilesSelected }) => 
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            className={`relative bg-white rounded-2xl border-2 border-dashed p-6 sm:p-8 flex flex-col items-center text-center transition-all ${
+            className={`group relative bg-white rounded-2xl border-2 border-dashed p-6 sm:p-8 flex flex-col items-center text-center transition-all ${
               isDragOver
                 ? 'border-blue-500 bg-blue-50/40 shadow-lg shadow-blue-500/10 scale-[1.01]'
                 : 'border-blue-200/90 hover:border-blue-400 shadow-[0_4px_25px_rgba(0,0,0,0.03)]'
             }`}
           >
-            {/* Cloud Icon */}
-            <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 mb-3.5 shadow-xs">
-              <UploadCloud className="w-7 h-7" />
+            {/* High-Fidelity Upload Icon with depth */}
+            <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-b from-blue-50 to-blue-100/60 border border-blue-200/80 flex items-center justify-center text-blue-600 mb-3.5 shadow-sm shadow-blue-500/10 group-hover:scale-105 transition-transform duration-300">
+              <div className="w-11 h-11 rounded-xl bg-white shadow-2xs flex items-center justify-center border border-blue-100/80 text-blue-600">
+                <UploadCloud className="w-6 h-6 stroke-[2.2]" />
+              </div>
             </div>
 
             <h3 className="text-base sm:text-lg font-bold text-slate-900 m-0">
@@ -209,38 +270,43 @@ export const LandingHero: React.FC<LandingHeroProps> = ({ onFilesSelected }) => 
             {/* Blue Select Button */}
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold shadow-md shadow-blue-600/25 transition-all active:scale-95"
+              className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold shadow-md shadow-blue-600/25 transition-all active:scale-95 cursor-pointer"
             >
               <UploadCloud className="w-4 h-4" />
               <span>选择图片</span>
             </button>
 
-            {/* 5 Sample Thumbnails Row */}
-            <div className="w-full pt-6 mt-6 border-t border-slate-100 flex flex-col items-center gap-2">
-              <div className="flex items-center justify-center gap-2 sm:gap-2.5 w-full">
-                {[
-                  { id: 'mountain', label: '雪山', preview: 'linear-gradient(135deg, #38bdf8, #0284c7)' },
-                  { id: 'sunset', label: '日落', preview: 'linear-gradient(135deg, #f97316, #b45309)' },
-                  { id: 'cat', label: '猫咪', preview: 'linear-gradient(135deg, #fef3c7, #d97706)' },
-                  { id: 'leaf', label: '绿叶', preview: 'linear-gradient(135deg, #bbf7d0, #16a34a)' },
-                  { id: 'city', label: '城市', preview: 'linear-gradient(135deg, #4338ca, #db2777)' },
-                ].map((item) => (
+            {/* 5 High-Fidelity Photo Thumbnails Row */}
+            <div className="w-full pt-4 sm:pt-5 mt-4 sm:mt-5 border-t border-slate-100 flex flex-col items-center gap-2">
+              <span className="text-[11px] text-slate-400 font-medium">或试用高保真示例图片:</span>
+              <div className="flex items-center justify-center gap-2 sm:gap-2.5 w-full overflow-x-auto py-1 px-1">
+                {SAMPLE_PHOTOS.map((item) => (
                   <button
                     key={item.id}
-                    onClick={() => handleSelectSample(item.id as any)}
-                    className="group flex flex-col items-center gap-1 cursor-pointer transition-transform hover:scale-105"
+                    onClick={() => handleSelectSample(item)}
+                    className="group/thumb relative flex flex-col items-center cursor-pointer transition-transform hover:scale-105 active:scale-95 shrink-0"
                     title={`测试样本：${item.label}`}
                   >
-                    <div
-                      style={{ background: item.preview }}
-                      className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg border border-slate-200/80 shadow-xs flex items-center justify-center text-xs font-bold text-white group-hover:border-blue-500"
-                    >
-                      {item.label === '雪山' && '🏔️'}
-                      {item.label === '日落' && '🌅'}
-                      {item.label === '猫咪' && '🐱'}
-                      {item.label === '绿叶' && '🍃'}
-                      {item.label === '城市' && '🏙️'}
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden group-hover/thumb:border-blue-500 group-hover/thumb:shadow-md transition-all bg-slate-100">
+                      <img
+                        src={item.thumb}
+                        alt={item.label}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover/thumb:scale-110"
+                        loading="lazy"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          try {
+                            const fallbackFile = createSampleImage(item.id);
+                            target.src = URL.createObjectURL(fallbackFile);
+                          } catch {
+                            // ignore
+                          }
+                        }}
+                      />
                     </div>
+                    <span className="text-[10px] text-slate-500 group-hover/thumb:text-blue-600 font-medium mt-1">
+                      {item.label}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -264,7 +330,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({ onFilesSelected }) => 
                 <button
                   onClick={handleLoadFromUrl}
                   disabled={isLoadingUrl || !imageUrlInput.trim()}
-                  className="absolute right-1.5 p-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-30 transition-colors"
+                  className="absolute right-1.5 p-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-30 transition-colors cursor-pointer"
                 >
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
@@ -273,24 +339,47 @@ export const LandingHero: React.FC<LandingHeroProps> = ({ onFilesSelected }) => 
           </div>
         </div>
 
-        {/* Right Column: Illustration & Value Proposition */}
+        {/* Right Column: High-Fidelity 3D Photo Proxy Mockup */}
         <div className="lg:col-span-3 flex flex-col items-center lg:items-start text-center lg:text-left gap-4">
-          {/* Layered illustration cards */}
-          <div className="relative w-48 h-36 mx-auto lg:mx-0 flex items-center justify-center">
-            {/* Background layered card */}
-            <div className="absolute w-36 h-28 rounded-2xl bg-blue-100/60 border border-blue-200/80 -rotate-6 transform translate-x-2 translate-y-1 shadow-sm" />
-            <div className="absolute w-36 h-28 rounded-2xl bg-blue-50 border border-blue-200 rotate-3 transform shadow-sm" />
-            {/* Front card with mountain & sun */}
-            <div className="relative w-40 h-28 rounded-2xl bg-white border border-slate-200 shadow-md p-2 flex flex-col justify-between overflow-hidden">
-              <div className="flex items-center justify-between">
-                <div className="w-4 h-4 rounded-full bg-blue-400" />
-                <div className="p-1 rounded bg-blue-50 text-blue-600">
-                  <Crop className="w-3.5 h-3.5" />
+          {/* Layered High-Fidelity Photo Cards with depth */}
+          <div className="relative w-56 h-40 mx-auto lg:mx-0 flex items-center justify-center">
+            {/* Ambient colorful glow */}
+            <div className="absolute w-44 h-28 rounded-3xl bg-gradient-to-r from-blue-400/20 via-indigo-400/20 to-sky-400/20 blur-xl pointer-events-none" />
+
+            {/* Layer 1 (Back card): Glassmorphic angled card */}
+            <div className="absolute w-44 h-28 rounded-2xl bg-white/70 backdrop-blur-md border border-slate-200/80 -rotate-8 transform translate-x-3 -translate-y-2 shadow-sm" />
+
+            {/* Layer 2 (Middle card): Subtle rotated card */}
+            <div className="absolute w-44 h-28 rounded-2xl bg-white/90 backdrop-blur-sm border border-slate-200/90 rotate-4 transform translate-x-1 shadow-md" />
+
+            {/* Layer 3 (Front card): High-fidelity photograph with interactive crop corner badge */}
+            <div className="relative w-48 h-32 rounded-2xl bg-white border border-slate-200/90 shadow-xl overflow-hidden p-1.5 flex flex-col group transition-transform hover:-translate-y-1 duration-300">
+              <div className="relative w-full h-full rounded-xl overflow-hidden">
+                {/* Real High-Fidelity Landscape Image */}
+                <img
+                  src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600&auto=format&fit=crop&q=80"
+                  alt="High-Fidelity Photo Preview"
+                  className="w-full h-full object-cover"
+                />
+
+                {/* Subtle crop overlay grid */}
+                <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 pointer-events-none opacity-40">
+                  <div className="border-r border-b border-white/60" />
+                  <div className="border-r border-b border-white/60" />
+                  <div className="border-b border-white/60" />
+                  <div className="border-r border-b border-white/60" />
+                  <div className="border-r border-b border-white/60" />
+                  <div className="border-b border-white/60" />
+                  <div className="border-r border-b border-white/60" />
+                  <div className="border-r border-b border-white/60" />
+                  <div />
                 </div>
-              </div>
-              <div className="flex items-end justify-center gap-1 -mb-1">
-                <div className="w-16 h-10 bg-blue-200 rounded-t-lg" />
-                <div className="w-20 h-14 bg-blue-400 rounded-t-lg" />
+
+                {/* Floating glowing blue crop badge in bottom-right (matching user screenshot) */}
+                <div className="absolute bottom-1.5 right-1.5 px-2 py-0.5 rounded-lg bg-blue-600/90 backdrop-blur-md border border-white/40 text-white shadow-lg shadow-blue-500/30 flex items-center gap-1">
+                  <Crop className="w-2.5 h-2.5 text-white" />
+                  <span className="text-[9px] font-bold tracking-tight">智能裁剪</span>
+                </div>
               </div>
             </div>
           </div>
@@ -315,10 +404,12 @@ export const LandingHero: React.FC<LandingHeroProps> = ({ onFilesSelected }) => 
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           {[
             { id: 'crop', label: '裁剪', icon: Crop },
-            { id: 'resize', label: '调整尺寸', icon: Maximize2 },
+            { id: 'rotate', label: '旋转', icon: RefreshCw },
+            { id: 'convert', label: '格式', icon: Sliders },
             { id: 'compress', label: '压缩', icon: HardDrive },
-            { id: 'convert', label: '格式转换', icon: RefreshCw },
-            { id: 'more', label: '更多工具', icon: MoreHorizontal },
+            { id: 'filter', label: '滤镜', icon: Palette },
+            { id: 'watermark', label: '水印', icon: Droplet },
+            { id: 'more', label: '更多', icon: MoreHorizontal },
           ].map((tool) => {
             const Icon = tool.icon;
             return (
