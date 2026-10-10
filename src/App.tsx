@@ -1,27 +1,38 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { saveAs } from 'file-saver';
-import type { ImageItem, ResizeSettings } from './types';
+import type {
+  ImageItem,
+  ResizeSettings,
+  ActiveTool,
+  CreationRecord,
+} from './types';
 import { processImage, loadImage } from './utils/imageProcess';
 import { getExtensionFromMime } from './utils/formatters';
-import { Header } from './components/Header';
-import { DropZone } from './components/DropZone';
-import { ImagePreview } from './components/ImagePreview';
-import { ResizeControls } from './components/ResizeControls';
-import { CropModal } from './components/CropModal';
+import { Navbar } from './components/Navbar';
+import { LandingHero } from './components/LandingHero';
+import { EditorWorkspace } from './components/EditorWorkspace';
 import { BatchProcessor } from './components/BatchProcessor';
+import { MyCreationsModal } from './components/MyCreationsModal';
 
 export const App: React.FC = () => {
   const [images, setImages] = useState<ImageItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'single' | 'batch'>('single');
+  
+  // Navigation / View states
+  const [activeNavTab, setActiveNavTab] = useState<'process' | 'creations'>('process');
+  const [viewMode, setViewMode] = useState<'landing' | 'editor' | 'batch'>('landing');
+  
+  // Creations history
+  const [creations, setCreations] = useState<CreationRecord[]>([]);
+
+  // Processing state
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
 
   // Default resize settings
   const [settings, setSettings] = useState<ResizeSettings>({
     mode: 'dimensions',
-    width: 1920,
-    height: 1080,
+    width: 1200,
+    height: 800,
     lockAspectRatio: true,
     fitMode: 'inside',
     fillColor: '#ffffff',
@@ -32,71 +43,80 @@ export const App: React.FC = () => {
     flipHorizontal: false,
     flipVertical: false,
     crop: undefined,
-    format: 'image/webp',
-    quality: 0.85,
+    filters: {
+      brightness: 100,
+      contrast: 100,
+      saturation: 100,
+      grayscale: 0,
+      sepia: 0,
+    },
+    watermark: {
+      enabled: false,
+      text: 'PicScale',
+      fontSize: 32,
+      color: '#ffffff',
+      opacity: 0.7,
+      position: 'bottom-right',
+    },
+    format: 'image/jpeg',
+    quality: 0.92,
     filenameSuffix: '_resized',
   });
 
   const selectedImage = images.find((i) => i.id === selectedId) || images[0] || null;
 
-  // Revoke object URLs on cleanup
-  const revokeImageUrls = (item: ImageItem) => {
-    if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
-    if (item.processedUrl) URL.revokeObjectURL(item.processedUrl);
-  };
-
   // Add files to state
-  const handleAddFiles = useCallback(async (files: File[]) => {
-    const newItems: ImageItem[] = [];
+  const handleAddFiles = useCallback(
+    async (files: File[], _initialTool?: ActiveTool) => {
+      const newItems: ImageItem[] = [];
 
-    for (const file of files) {
-      try {
-        const previewUrl = URL.createObjectURL(file);
-        const img = await loadImage(previewUrl);
+      for (const file of files) {
+        try {
+          const previewUrl = URL.createObjectURL(file);
+          const img = await loadImage(previewUrl);
 
-        newItems.push({
-          id: `${file.name}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-          file,
-          name: file.name,
-          originalWidth: img.naturalWidth,
-          originalHeight: img.naturalHeight,
-          originalSize: file.size,
-          originalType: file.type || 'image/jpeg',
-          previewUrl,
-          status: 'idle',
-        });
-      } catch (err) {
-        console.error('Error reading image file:', err);
+          newItems.push({
+            id: `${file.name}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            file,
+            name: file.name,
+            originalWidth: img.naturalWidth,
+            originalHeight: img.naturalHeight,
+            originalSize: file.size,
+            originalType: file.type || 'image/jpeg',
+            previewUrl,
+            status: 'idle',
+          });
+        } catch (err) {
+          console.error('Error reading image file:', err);
+        }
       }
-    }
 
-    if (newItems.length > 0) {
-      setImages((prev) => {
-        const updated = [...prev, ...newItems];
-        return updated;
-      });
-
-      // If no image was selected, pick the first new one and init width/height
-      if (!selectedId) {
+      if (newItems.length > 0) {
+        setImages((prev) => [...prev, ...newItems]);
         const first = newItems[0];
         setSelectedId(first.id);
         setSettings((s) => ({
           ...s,
           width: first.originalWidth,
           height: first.originalHeight,
+          rotation: 0,
+          crop: undefined,
         }));
-      }
 
-      // If user uploaded more than 1 image and was on blank screen, switch to batch tab
-      if (newItems.length > 1 && images.length === 0) {
-        setActiveTab('batch');
+        if (newItems.length > 1) {
+          setViewMode('batch');
+        } else {
+          setViewMode('editor');
+        }
+        setActiveNavTab('process');
       }
-    }
-  }, [images.length, selectedId]);
+    },
+    []
+  );
 
-  // When selected image changes, sync initial width & height
+  // Synchronize width & height when selected image changes
   useEffect(() => {
-    if (selectedImage && settings.mode === 'dimensions') {
+    if (selectedImage) {
       setSettings((prev) => ({
         ...prev,
         width: selectedImage.originalWidth,
@@ -109,7 +129,7 @@ export const App: React.FC = () => {
     }
   }, [selectedImage?.id]);
 
-  // Process single image automatically when settings or selected image changes (debounced)
+  // Debounced auto-processing whenever settings or image changes
   const debounceTimerRef = useRef<any>(null);
 
   useEffect(() => {
@@ -147,7 +167,7 @@ export const App: React.FC = () => {
       } finally {
         setIsProcessing(false);
       }
-    }, 180);
+    }, 150);
 
     return () => {
       if (debounceTimerRef.current) {
@@ -169,156 +189,140 @@ export const App: React.FC = () => {
     settings.flipHorizontal,
     settings.flipVertical,
     settings.crop,
+    settings.filters,
+    settings.watermark,
     settings.format,
     settings.quality,
   ]);
 
-  // Download single image
+  // Download single image & record to creations
   const handleDownloadSingle = () => {
     if (!selectedImage?.processedBlob) return;
     const ext = getExtensionFromMime(settings.format);
     const baseName = selectedImage.name.replace(/\.[^/.]+$/, '');
     const filename = `${baseName}_resized.${ext}`;
+
     saveAs(selectedImage.processedBlob, filename);
+
+    // Save to creations
+    const record: CreationRecord = {
+      id: `${Date.now()}`,
+      name: filename,
+      timestamp: Date.now(),
+      blob: selectedImage.processedBlob,
+      url: URL.createObjectURL(selectedImage.processedBlob),
+      width: selectedImage.processedWidth || settings.width,
+      height: selectedImage.processedHeight || settings.height,
+      size: selectedImage.processedSize || selectedImage.processedBlob.size,
+      format: ext,
+    };
+    setCreations((prev) => [record, ...prev]);
   };
 
-  // Remove single image
-  const handleRemoveImage = (id: string) => {
-    const item = images.find((i) => i.id === id);
-    if (item) revokeImageUrls(item);
-    setImages((prev) => prev.filter((i) => i.id !== id));
-    if (selectedId === id) {
-      const remaining = images.filter((i) => i.id !== id);
-      setSelectedId(remaining.length > 0 ? remaining[0].id : null);
-    }
+  // Remove creation
+  const handleRemoveCreation = (id: string) => {
+    setCreations((prev) => prev.filter((c) => c.id !== id));
   };
 
-  // Clear all
-  const handleClearAll = () => {
-    images.forEach(revokeImageUrls);
-    setImages([]);
-    setSelectedId(null);
+  // Clear creations
+  const handleClearCreations = () => {
+    setCreations([]);
   };
 
-  // Update single image state
+  // Update image in batch
   const handleUpdateImage = (id: string, updates: Partial<ImageItem>) => {
     setImages((prev) =>
       prev.map((item) => (item.id === id ? { ...item, ...updates } : item))
     );
   };
 
+  // Remove image from list
+  const handleRemoveImage = (id: string) => {
+    setImages((prev) => prev.filter((i) => i.id !== id));
+    if (selectedId === id) {
+      const remaining = images.filter((i) => i.id !== id);
+      if (remaining.length > 0) {
+        setSelectedId(remaining[0].id);
+      } else {
+        setSelectedId(null);
+        setViewMode('landing');
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col font-sans">
-      {/* Top Navigation */}
-      <Header
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        imageCount={images.length}
-        onClear={handleClearAll}
-      />
-
-      {/* Main Body */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 lg:p-8 flex flex-col">
-        {images.length === 0 ? (
-          /* Empty / Upload State */
-          <div className="flex-1 flex flex-col items-center justify-center">
-            <DropZone onFilesSelected={handleAddFiles} />
-          </div>
-        ) : activeTab === 'batch' ? (
-          /* Batch Mode View */
-          <BatchProcessor
-            images={images}
-            settings={settings}
-            onUpdateImage={handleUpdateImage}
-            onRemoveImage={handleRemoveImage}
-            onAddFiles={handleAddFiles}
-            onSelectForSingleEdit={(item) => {
-              setSelectedId(item.id);
-              setActiveTab('single');
+      {/* 1. If in Editor Mode, show Fullscreen SAAS Editor Workspace */}
+      {viewMode === 'editor' && selectedImage && activeNavTab === 'process' ? (
+        <EditorWorkspace
+          image={selectedImage}
+          settings={settings}
+          onUpdateSettings={setSettings}
+          onBack={() => setViewMode('landing')}
+          onDownload={handleDownloadSingle}
+          onBatchView={() => setViewMode('batch')}
+          isProcessing={isProcessing}
+        />
+      ) : (
+        /* 2. Standard View with Top Navbar */
+        <>
+          <Navbar
+            activeTab={activeNavTab}
+            onTabChange={(tab) => {
+              setActiveNavTab(tab);
+            }}
+            creationsCount={creations.length}
+            onGoHome={() => {
+              setActiveNavTab('process');
+              setViewMode('landing');
             }}
           />
-        ) : (
-          /* Single Fine-tuning View */
-          <div className="flex-1 flex flex-col gap-4 sm:gap-6">
-            {/* Image Selector Strip if multiple images loaded */}
-            {images.length > 1 && (
-              <div className="flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-none">
-                <span className="text-xs text-slate-500 whitespace-nowrap font-medium">
-                  当前队列 ({images.length}):
-                </span>
-                {images.map((img) => (
-                  <button
-                    key={img.id}
-                    onClick={() => setSelectedId(img.id)}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-medium transition-all shrink-0 whitespace-nowrap ${
-                      img.id === selectedImage?.id
-                        ? 'bg-indigo-50 border-indigo-500 text-indigo-900 shadow-xs font-semibold'
-                        : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
-                    }`}
-                  >
-                    <img
-                      src={img.previewUrl}
-                      alt={img.name}
-                      className="w-5 h-5 rounded object-cover"
-                    />
-                    <span className="truncate max-w-[130px]">{img.name}</span>
-                  </button>
-                ))}
-              </div>
-            )}
 
-            {/* Split Screen Layout: Left Preview / Right Controls */}
-            {selectedImage && (
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
-                {/* Left Preview Column */}
-                <div className="lg:col-span-7 xl:col-span-7 flex flex-col">
-                  <ImagePreview
-                    image={selectedImage}
-                    onOpenCrop={() => setIsCropModalOpen(true)}
-                    onDownload={handleDownloadSingle}
-                    isProcessing={isProcessing}
-                  />
+          <main className="flex-1 flex flex-col">
+            {activeNavTab === 'creations' ? (
+              /* My Creations View */
+              <MyCreationsModal
+                creations={creations}
+                onRemoveCreation={handleRemoveCreation}
+                onClearAll={handleClearCreations}
+                onBackToProcess={() => {
+                  setActiveNavTab('process');
+                  setViewMode(images.length > 0 ? 'editor' : 'landing');
+                }}
+              />
+            ) : viewMode === 'batch' && images.length > 0 ? (
+              /* Batch Processing Queue View */
+              <div className="w-full max-w-7xl mx-auto p-4 sm:p-8 flex flex-col gap-6">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setViewMode('editor')}
+                      className="px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-xs font-semibold text-slate-700 transition-colors"
+                    >
+                      ← 返回单图编辑
+                    </button>
+                    <h2 className="text-lg font-bold text-slate-900 m-0">批量处理管理</h2>
+                  </div>
                 </div>
 
-                {/* Right Parameter Controls Column */}
-                <div className="lg:col-span-5 xl:col-span-5 flex flex-col">
-                  <ResizeControls
-                    settings={settings}
-                    onChange={setSettings}
-                    originalWidth={selectedImage.originalWidth}
-                    originalHeight={selectedImage.originalHeight}
-                  />
-                </div>
+                <BatchProcessor
+                  images={images}
+                  settings={settings}
+                  onUpdateImage={handleUpdateImage}
+                  onRemoveImage={handleRemoveImage}
+                  onAddFiles={handleAddFiles}
+                  onSelectForSingleEdit={(item) => {
+                    setSelectedId(item.id);
+                    setViewMode('editor');
+                  }}
+                />
               </div>
+            ) : (
+              /* Landing Hero (Recreating Screen 1) */
+              <LandingHero onFilesSelected={handleAddFiles} />
             )}
-          </div>
-        )}
-      </main>
-
-      {/* Crop & Rotate Modal */}
-      {isCropModalOpen && selectedImage && (
-        <CropModal
-          imageUrl={selectedImage.previewUrl}
-          originalWidth={selectedImage.originalWidth}
-          originalHeight={selectedImage.originalHeight}
-          initialCrop={settings.crop}
-          initialRotation={settings.rotation}
-          initialFlipH={settings.flipHorizontal}
-          initialFlipV={settings.flipVertical}
-          onApply={(params) => {
-            setSettings((s) => ({
-              ...s,
-              crop: params.crop,
-              rotation: params.rotation,
-              flipHorizontal: params.flipHorizontal,
-              flipVertical: params.flipVertical,
-              width: params.crop ? params.crop.width : s.width,
-              height: params.crop ? params.crop.height : s.height,
-            }));
-            setIsCropModalOpen(false);
-          }}
-          onClose={() => setIsCropModalOpen(false)}
-        />
+          </main>
+        </>
       )}
     </div>
   );

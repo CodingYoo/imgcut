@@ -1,4 +1,4 @@
-import type { ResizeSettings, FitMode, OutputFormat } from '../types';
+import type { ResizeSettings, FitMode, OutputFormat, FilterSettings, WatermarkSettings } from '../types';
 
 /**
  * Loads an image from File or URL into an HTMLImageElement
@@ -245,6 +245,77 @@ function renderWithFitMode(
 }
 
 /**
+ * Apply filters (brightness, contrast, saturation, grayscale, sepia) and text watermark
+ */
+function applyFiltersAndWatermark(
+  canvas: HTMLCanvasElement,
+  filters?: FilterSettings,
+  watermark?: WatermarkSettings
+): HTMLCanvasElement {
+  if (!filters && (!watermark || !watermark.enabled)) return canvas;
+
+  const result = document.createElement('canvas');
+  result.width = canvas.width;
+  result.height = canvas.height;
+  const ctx = result.getContext('2d')!;
+
+  // 1. Filters
+  if (filters) {
+    const filterParts: string[] = [];
+    if (filters.brightness !== 100) filterParts.push(`brightness(${filters.brightness}%)`);
+    if (filters.contrast !== 100) filterParts.push(`contrast(${filters.contrast}%)`);
+    if (filters.saturation !== 100) filterParts.push(`saturate(${filters.saturation}%)`);
+    if (filters.grayscale > 0) filterParts.push(`grayscale(${filters.grayscale}%)`);
+    if (filters.sepia > 0) filterParts.push(`sepia(${filters.sepia}%)`);
+
+    if (filterParts.length > 0) {
+      ctx.filter = filterParts.join(' ');
+    }
+  }
+
+  ctx.drawImage(canvas, 0, 0);
+  ctx.filter = 'none';
+
+  // 2. Watermark
+  if (watermark && watermark.enabled && watermark.text.trim()) {
+    ctx.save();
+    ctx.globalAlpha = watermark.opacity || 0.7;
+    ctx.fillStyle = watermark.color || '#ffffff';
+    ctx.font = `bold ${watermark.fontSize || 32}px sans-serif`;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+    ctx.shadowBlur = 6;
+    ctx.shadowOffsetX = 2;
+    ctx.shadowOffsetY = 2;
+
+    const metrics = ctx.measureText(watermark.text);
+    const textW = metrics.width;
+    const textH = watermark.fontSize || 32;
+
+    let x = 40;
+    let y = textH + 40;
+
+    if (watermark.position === 'center') {
+      x = (canvas.width - textW) / 2;
+      y = (canvas.height + textH / 2) / 2;
+    } else if (watermark.position === 'bottom-right') {
+      x = canvas.width - textW - 40;
+      y = canvas.height - 40;
+    } else if (watermark.position === 'bottom-left') {
+      x = 40;
+      y = canvas.height - 40;
+    } else if (watermark.position === 'top-right') {
+      x = canvas.width - textW - 40;
+      y = textH + 40;
+    }
+
+    ctx.fillText(watermark.text, x, y);
+    ctx.restore();
+  }
+
+  return result;
+}
+
+/**
  * Converts a Canvas to a Blob with specified mime type and quality
  */
 function canvasToBlob(canvas: HTMLCanvasElement, format: OutputFormat, quality: number): Promise<Blob> {
@@ -301,6 +372,13 @@ export async function processImage(
     settings.fitMode,
     settings.fillColor,
     settings.format
+  );
+
+  // Apply visual filters & watermark if configured
+  finalCanvas = applyFiltersAndWatermark(
+    finalCanvas,
+    settings.filters,
+    settings.watermark
   );
 
   // 4. Handle Target Size (KB) mode with binary search optimization

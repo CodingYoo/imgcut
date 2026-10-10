@@ -69,7 +69,7 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFilesSelected, compact = f
     }
   };
 
-  const loadSample = (type: 'landscape' | 'portrait' | 'ultra') => {
+  const loadSample = (type: 'mountain' | 'sunset' | 'cat' | 'leaf' | 'city') => {
     const sample = createSampleImage(type);
     onFilesSelected([sample]);
   };
@@ -167,22 +167,22 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFilesSelected, compact = f
         </div>
         <div className="flex flex-wrap items-center justify-center gap-2 w-full sm:w-auto">
           <button
-            onClick={() => loadSample('landscape')}
+            onClick={() => loadSample('mountain')}
             className="flex-1 sm:flex-none px-3 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-xs text-slate-700 font-medium transition-all shadow-xs hover:border-slate-300 whitespace-nowrap"
           >
-            🏔️ 1080P 风景照
+            🏔️ 湖泊雪山
           </button>
           <button
-            onClick={() => loadSample('portrait')}
+            onClick={() => loadSample('sunset')}
             className="flex-1 sm:flex-none px-3 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-xs text-slate-700 font-medium transition-all shadow-xs hover:border-slate-300 whitespace-nowrap"
           >
-            👤 证件人像源图
+            🌅 金色落日
           </button>
           <button
-            onClick={() => loadSample('ultra')}
+            onClick={() => loadSample('cat')}
             className="flex-1 sm:flex-none px-3 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-xs text-slate-700 font-medium transition-all shadow-xs hover:border-slate-300 whitespace-nowrap"
           >
-            🖥️ 4K 超清图
+            🐱 可爱猫咪
           </button>
         </div>
       </div>
