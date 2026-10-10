@@ -1,9 +1,9 @@
 import type { PresetItem } from '../types';
 
 export const PRESET_CATEGORIES = [
-  { id: 'id_photo', name: '证件照规格' },
-  { id: 'social', name: '社媒与内容' },
-  { id: 'display', name: '标准显示尺寸' },
+  { id: 'id_photo', name: '证件照' },
+  { id: 'social', name: '社媒内容' },
+  { id: 'display', name: '常用显示' },
   { id: 'ecommerce', name: '电商平台' },
 ] as const;
 

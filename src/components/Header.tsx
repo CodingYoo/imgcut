@@ -15,54 +15,62 @@ export const Header: React.FC<HeaderProps> = ({
   onClear,
 }) => {
   return (
-    <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-40 px-4 lg:px-8 py-3.5">
-      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-        {/* Brand */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white font-black text-xl">
-            <Sparkles className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold tracking-tight text-white m-0">
-                PicScale
-              </h1>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 font-medium border border-indigo-500/20">
-                纯浏览器端
-              </span>
+    <header className="border-b border-slate-200/80 bg-white/90 backdrop-blur-md sticky top-0 z-40 px-3.5 sm:px-6 lg:px-8 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4">
+        {/* Brand & Tagline */}
+        <div className="flex items-center justify-between w-full md:w-auto">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-sky-400 flex items-center justify-center shadow-md shadow-indigo-500/20 text-white font-black text-xl shrink-0">
+              <Sparkles className="w-5 h-5 text-white" />
             </div>
-            <p className="text-xs text-slate-400 m-0">
-              图片尺寸无损调整 · 目标体积压缩 · 批量导出
-            </p>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-base sm:text-lg font-bold tracking-tight text-slate-900 m-0">
+                  PicScale
+                </h1>
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-medium border border-indigo-200/80">
+                  纯浏览器端
+                </span>
+              </div>
+              <p className="text-[11px] sm:text-xs text-slate-500 m-0">
+                图片尺寸无损调整 · 目标体积压缩 · 批量导出
+              </p>
+            </div>
+          </div>
+
+          {/* Privacy badge for mobile */}
+          <div className="md:hidden flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200/60">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+            <span>本地计算</span>
           </div>
         </div>
 
-        {/* Mode Switcher */}
-        <div className="flex items-center gap-2">
-          <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
+        {/* Mode Switcher & Actions */}
+        <div className="flex items-center justify-between w-full md:w-auto gap-2">
+          <div className="flex bg-slate-100/90 p-1 rounded-xl border border-slate-200/70 w-full sm:w-auto">
             <button
               onClick={() => onTabChange('single')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
                 activeTab === 'single'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-white text-indigo-700 shadow-sm border border-slate-200/60'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <ImageIcon className="w-4 h-4" />
-              单图精细调整
+              <ImageIcon className="w-3.5 h-3.5 text-indigo-600" />
+              <span>单图精细调整</span>
             </button>
             <button
               onClick={() => onTabChange('batch')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
                 activeTab === 'batch'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-white text-indigo-700 shadow-sm border border-slate-200/60'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <Layers className="w-4 h-4" />
-              批量快速处理
+              <Layers className="w-3.5 h-3.5 text-indigo-600" />
+              <span>批量快速处理</span>
               {imageCount > 0 && (
-                <span className="ml-1 px-1.5 py-0.2 rounded-full bg-slate-800 text-[10px] text-indigo-300">
+                <span className="ml-1 px-1.5 py-0.2 rounded-full bg-indigo-50 text-[10px] text-indigo-700 border border-indigo-200/60">
                   {imageCount}
                 </span>
               )}
@@ -73,17 +81,17 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={onClear}
               title="清空当前列表"
-              className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors border border-transparent hover:border-red-500/20"
+              className="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors border border-slate-200/70 hover:border-rose-200 shrink-0"
             >
               <Trash2 className="w-4 h-4" />
             </button>
           )}
-        </div>
 
-        {/* Privacy Pill */}
-        <div className="hidden md:flex items-center gap-2 text-xs text-emerald-400/90 bg-emerald-950/40 px-3 py-1.5 rounded-full border border-emerald-500/20">
-          <ShieldCheck className="w-4 h-4 text-emerald-400" />
-          <span>本地引擎计算 · 绝不上传服务器 · 隐私安全</span>
+          {/* Privacy Pill for desktop */}
+          <div className="hidden lg:flex items-center gap-1.5 text-xs text-emerald-800 bg-emerald-50/90 px-3 py-1.5 rounded-xl border border-emerald-200/70 shrink-0">
+            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <span className="font-medium">本地引擎计算 · 绝不上传服务器 · 隐私安全</span>
+          </div>
         </div>
       </div>
     </header>

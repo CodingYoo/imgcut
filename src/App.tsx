@@ -208,7 +208,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col font-sans">
       {/* Top Navigation */}
       <Header
         activeTab={activeTab}
@@ -218,7 +218,7 @@ export const App: React.FC = () => {
       />
 
       {/* Main Body */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 lg:p-8 flex flex-col">
         {images.length === 0 ? (
           /* Empty / Upload State */
           <div className="flex-1 flex flex-col items-center justify-center">
@@ -239,21 +239,21 @@ export const App: React.FC = () => {
           />
         ) : (
           /* Single Fine-tuning View */
-          <div className="flex-1 flex flex-col gap-6">
+          <div className="flex-1 flex flex-col gap-4 sm:gap-6">
             {/* Image Selector Strip if multiple images loaded */}
             {images.length > 1 && (
-              <div className="flex items-center gap-2.5 overflow-x-auto pb-2 scrollbar-none">
-                <span className="text-xs text-slate-400 whitespace-nowrap font-medium">
-                  当前图片列表 ({images.length}):
+              <div className="flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-none">
+                <span className="text-xs text-slate-500 whitespace-nowrap font-medium">
+                  当前队列 ({images.length}):
                 </span>
                 {images.map((img) => (
                   <button
                     key={img.id}
                     onClick={() => setSelectedId(img.id)}
-                    className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl border text-xs font-medium transition-all shrink-0 ${
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-medium transition-all shrink-0 whitespace-nowrap ${
                       img.id === selectedImage?.id
-                        ? 'bg-indigo-600/20 border-indigo-500 text-white shadow-md shadow-indigo-500/10'
-                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
+                        ? 'bg-indigo-50 border-indigo-500 text-indigo-900 shadow-xs font-semibold'
+                        : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
                     }`}
                   >
                     <img
@@ -261,7 +261,7 @@ export const App: React.FC = () => {
                       alt={img.name}
                       className="w-5 h-5 rounded object-cover"
                     />
-                    <span className="truncate max-w-[120px]">{img.name}</span>
+                    <span className="truncate max-w-[130px]">{img.name}</span>
                   </button>
                 ))}
               </div>
@@ -269,9 +269,9 @@ export const App: React.FC = () => {
 
             {/* Split Screen Layout: Left Preview / Right Controls */}
             {selectedImage && (
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
                 {/* Left Preview Column */}
-                <div className="lg:col-span-7 xl:col-span-8 flex flex-col">
+                <div className="lg:col-span-7 xl:col-span-7 flex flex-col">
                   <ImagePreview
                     image={selectedImage}
                     onOpenCrop={() => setIsCropModalOpen(true)}
@@ -281,7 +281,7 @@ export const App: React.FC = () => {
                 </div>
 
                 {/* Right Parameter Controls Column */}
-                <div className="lg:col-span-5 xl:col-span-4 flex flex-col">
+                <div className="lg:col-span-5 xl:col-span-5 flex flex-col">
                   <ResizeControls
                     settings={settings}
                     onChange={setSettings}
@@ -312,7 +312,6 @@ export const App: React.FC = () => {
               rotation: params.rotation,
               flipHorizontal: params.flipHorizontal,
               flipVertical: params.flipVertical,
-              // If cropped, update width and height
               width: params.crop ? params.crop.width : s.width,
               height: params.crop ? params.crop.height : s.height,
             }));
