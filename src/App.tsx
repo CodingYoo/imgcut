@@ -171,7 +171,7 @@ export const App: React.FC = () => {
       } finally {
         setIsProcessing(false);
       }
-    }, 150);
+    }, 75);
 
     return () => {
       if (debounceTimerRef.current) {

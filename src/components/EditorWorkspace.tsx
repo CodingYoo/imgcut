@@ -34,7 +34,7 @@ import type {
   HistoryRecord,
   FitMode,
 } from '../types';
-import { formatBytes, formatDimensions, getExtensionFromMime, calculateSavings } from '../utils/formatters';
+import { formatBytes, splitBytes, formatDimensions, getExtensionFromMime, calculateSavings } from '../utils/formatters';
 import { PRESETS, PRESET_CATEGORIES } from '../utils/presets';
 
 interface EditorWorkspaceProps {
@@ -1363,7 +1363,7 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
 
                     <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs flex justify-between items-center mt-2">
                       <span className="text-slate-500">转换后大小:</span>
-                      <span className="font-mono font-bold text-blue-600">
+                      <span className="font-mono font-bold text-blue-600 whitespace-nowrap">
                         {image.processedSize ? formatBytes(image.processedSize) : '计算中...'}
                       </span>
                     </div>
@@ -1374,27 +1374,42 @@ export const EditorWorkspace: React.FC<EditorWorkspaceProps> = ({
                 {activeTool === 'compress' && (
                   <div className="flex flex-col gap-4">
                     {/* Real-time File Size Indicator (Prominent Banner) */}
-                    <div className="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50/70 border border-blue-200 flex flex-col gap-2 shadow-xs">
+                    <div className="p-3.5 rounded-2xl bg-gradient-to-br from-blue-50/90 via-indigo-50/50 to-blue-50/70 border border-blue-200/90 flex flex-col gap-2.5 shadow-2xs">
+                      {/* Top Row: Title + Savings Badge + Inline Spinner */}
                       <div className="flex items-center justify-between text-xs text-blue-900 font-semibold">
-                        <span>调整后图片大小</span>
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-mono font-bold">
+                        <div className="flex items-center gap-1.5">
+                          <span>调整后图片大小</span>
+                          {isProcessing && (
+                            <RefreshCw className="w-3 h-3 text-blue-500 animate-spin shrink-0" />
+                          )}
+                        </div>
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-mono font-bold whitespace-nowrap shrink-0">
                           {savings.diffText}
                         </span>
                       </div>
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-3xl font-black font-mono text-blue-600">
-                          {image.processedSize ? formatBytes(image.processedSize) : '计算中...'}
-                        </span>
-                        <span className="text-xs text-slate-400 font-mono">
-                          (原图: {formatBytes(image.originalSize)})
+
+                      {/* Main Numbers Row: Big Value + Unit (no wrap) + Original Size */}
+                      <div className="flex items-baseline justify-between gap-2">
+                        <div className="flex items-baseline gap-1 whitespace-nowrap">
+                          <span className="text-2xl sm:text-3xl font-black font-mono text-blue-600 tracking-tight">
+                            {splitBytes(image.processedSize || image.originalSize).value}
+                          </span>
+                          <span className="text-xs sm:text-sm font-bold font-mono text-blue-500">
+                            {splitBytes(image.processedSize || image.originalSize).unit}
+                          </span>
+                        </div>
+                        <span className="text-xs text-slate-400 font-mono whitespace-nowrap shrink-0">
+                          原图: {formatBytes(image.originalSize)}
                         </span>
                       </div>
-                      {isProcessing && (
-                        <div className="flex items-center gap-1.5 text-[11px] text-blue-500">
-                          <RefreshCw className="w-3 h-3 animate-spin" />
-                          <span>正在实时压缩并计算大小...</span>
-                        </div>
-                      )}
+
+                      {/* Bottom Fixed Status Bar: Zero Layout Shift */}
+                      <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1.5 border-t border-blue-100/80">
+                        <span className="text-slate-500">当前质量: {Math.round(settings.quality * 100)}%</span>
+                        <span className="font-mono text-slate-400">
+                          {isProcessing ? '正在更新...' : `${savings.saved ? '减小' : '增加'} ${formatBytes(Math.abs(image.originalSize - (image.processedSize || image.originalSize)))}`}
+                        </span>
+                      </div>
                     </div>
 
                     {/* Submode Switcher */}

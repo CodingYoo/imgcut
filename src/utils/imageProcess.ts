@@ -1,14 +1,23 @@
 import type { ResizeSettings, FitMode, OutputFormat, FilterSettings, WatermarkSettings } from '../types';
 
+const imageElementCache = new Map<string, HTMLImageElement>();
+
 /**
  * Loads an image from File or URL into an HTMLImageElement
  */
 export function loadImage(source: File | string): Promise<HTMLImageElement> {
+  const cacheKey = source instanceof File ? `${source.name}-${source.size}-${source.lastModified}` : source;
+  const cached = imageElementCache.get(cacheKey);
+  if (cached && cached.complete && cached.naturalWidth > 0) {
+    return Promise.resolve(cached);
+  }
+
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
 
     img.onload = () => {
+      imageElementCache.set(cacheKey, img);
       resolve(img);
     };
 
@@ -334,6 +343,14 @@ function canvasToBlob(canvas: HTMLCanvasElement, format: OutputFormat, quality: 
   });
 }
 
+let cachedFinalCanvas: {
+  key: string;
+  canvas: HTMLCanvasElement;
+  transformed: HTMLCanvasElement;
+  targetW: number;
+  targetH: number;
+} | null = null;
+
 /**
  * Core processor for single image resize
  */
@@ -346,40 +363,79 @@ export async function processImage(
   height: number;
   size: number;
 }> {
-  const img = await loadImage(source);
-
-  // 1. Transformations: Rotation, Flip, Crop
-  const transformed = applyTransformations(
-    img,
+  const canvasKey = [
+    source instanceof File ? `${source.name}-${source.size}-${source.lastModified}` : source,
     settings.rotation,
     settings.flipHorizontal,
     settings.flipVertical,
-    settings.crop
-  );
-
-  // 2. Determine target dimensions
-  let { width: targetW, height: targetH } = calculateTargetDimensions(
-    transformed.width,
-    transformed.height,
-    settings
-  );
-
-  // 3. Render with fit mode
-  let finalCanvas = renderWithFitMode(
-    transformed,
-    targetW,
-    targetH,
+    settings.crop ? `${settings.crop.x},${settings.crop.y},${settings.crop.width},${settings.crop.height}` : 'none',
+    settings.mode,
+    settings.width,
+    settings.height,
+    settings.percentage,
     settings.fitMode,
     settings.fillColor,
-    settings.format
-  );
+    settings.format,
+    JSON.stringify(settings.filters || {}),
+    JSON.stringify(settings.watermark || {}),
+  ].join('|');
 
-  // Apply visual filters & watermark if configured
-  finalCanvas = applyFiltersAndWatermark(
-    finalCanvas,
-    settings.filters,
-    settings.watermark
-  );
+  let finalCanvas: HTMLCanvasElement;
+  let transformed: HTMLCanvasElement;
+  let targetW: number;
+  let targetH: number;
+
+  if (cachedFinalCanvas && cachedFinalCanvas.key === canvasKey) {
+    finalCanvas = cachedFinalCanvas.canvas;
+    transformed = cachedFinalCanvas.transformed;
+    targetW = cachedFinalCanvas.targetW;
+    targetH = cachedFinalCanvas.targetH;
+  } else {
+    const img = await loadImage(source);
+
+    // 1. Transformations: Rotation, Flip, Crop
+    transformed = applyTransformations(
+      img,
+      settings.rotation,
+      settings.flipHorizontal,
+      settings.flipVertical,
+      settings.crop
+    );
+
+    // 2. Determine target dimensions
+    const dims = calculateTargetDimensions(
+      transformed.width,
+      transformed.height,
+      settings
+    );
+    targetW = dims.width;
+    targetH = dims.height;
+
+    // 3. Render with fit mode
+    finalCanvas = renderWithFitMode(
+      transformed,
+      targetW,
+      targetH,
+      settings.fitMode,
+      settings.fillColor,
+      settings.format
+    );
+
+    // Apply visual filters & watermark if configured
+    finalCanvas = applyFiltersAndWatermark(
+      finalCanvas,
+      settings.filters,
+      settings.watermark
+    );
+
+    cachedFinalCanvas = {
+      key: canvasKey,
+      canvas: finalCanvas,
+      transformed,
+      targetW,
+      targetH,
+    };
+  }
 
   // 4. Handle Target Size (KB) mode with binary search optimization
   if (settings.mode === 'target_size' && settings.targetSizeKB > 0) {

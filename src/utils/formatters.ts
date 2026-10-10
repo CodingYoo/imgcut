@@ -7,6 +7,18 @@ export function formatBytes(bytes: number, decimals = 1): string {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
 }
 
+export function splitBytes(bytes: number, decimals = 1): { value: string; unit: string } {
+  if (!bytes || bytes <= 0) return { value: '0', unit: 'B' };
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return {
+    value: parseFloat((bytes / Math.pow(k, i)).toFixed(dm)).toString(),
+    unit: sizes[i] || 'B',
+  };
+}
+
 export function formatDimensions(w: number, h: number): string {
   return `${Math.round(w)} × ${Math.round(h)} px`;
 }
